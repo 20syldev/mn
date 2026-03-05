@@ -1,12 +1,12 @@
 #!/bin/sh
 
 # mn installer
-# Usage: curl -fsSL https://cdn.sylvain.pro/bash/mn@latest/install.sh | sh
+# Usage: curl -fsSL https://cdn.sylvain.sh/bash/mn@latest/install.sh | sh
 
 set -e
 
 VERSION="1.0.0"
-CDN="https://cdn.sylvain.pro/bash"
+CDN="https://cdn.sylvain.sh/bash"
 MN_DIR="$HOME/.config/mn"
 
 RED='\033[0;31m'
