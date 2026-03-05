@@ -7,7 +7,7 @@ An interactive terminal menu for managing SSH connections, GitHub repositories, 
 ### Via curl (recommended)
 
 ```bash
-curl -fsSL https://cdn.sylvain.pro/bash/mn@latest/install.sh | sh
+curl -fsSL https://cdn.sylvain.sh/bash/mn@latest/install.sh | sh
 ```
 
 ### Manual installation
