@@ -5,9 +5,9 @@
 
 set -e
 
-VERSION="1.0.0"
-MN_DIR="$HOME/.config/mn"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+VERSION="$(cat "$SCRIPT_DIR/VERSION")"
+MN_DIR="$HOME/.config/mn"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -23,6 +23,7 @@ fi
 
 # ─── Update mn ────────────────────────────────────────────────────────
 
+cp "$SCRIPT_DIR/VERSION" "$MN_DIR/VERSION"
 cp "$SCRIPT_DIR/mn" "$MN_DIR/mn" && chmod +x "$MN_DIR/mn"
 printf "${GREEN}mn updated${NC}\n"
 
