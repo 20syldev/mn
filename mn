@@ -5,6 +5,7 @@
 # =========================================================
 
 MN_DIR="$HOME/.config/mn"
+VERSION="$(cat "$MN_DIR/VERSION")"
 
 # Load libraries
 source "$MN_DIR/lib/core.sh"
@@ -48,7 +49,7 @@ show_main_menu() {
 
 show_help() {
     clear_screen
-    draw_header "$T_HELP_TITLE"
+    draw_header "$T_HELP_TITLE ${CYAN}${VERSION}${NC}"
 
     echo ""
     echo -e "  ${BOLD}$T_HELP_USAGE${NC}"
@@ -95,6 +96,10 @@ main() {
     local arg="${1:-}"
 
     case "$arg" in
+        -v|--version)
+            echo "mn $VERSION"
+            return
+            ;;
         help|h|-h|--help)
             show_help
             return
