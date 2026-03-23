@@ -5,9 +5,12 @@
 
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-VERSION="$(cat "$SCRIPT_DIR/VERSION")"
 CDN="https://cdn.sylvain.sh/bash"
+VERSION="$(curl -fsSL "${CDN}/mn@latest" | grep -o '"version": *"[^"]*"' | head -1 | cut -d'"' -f4)"
+if [ -z "$VERSION" ]; then
+    printf "${RED}Failed to fetch version${NC}\n"
+    exit 1
+fi
 MN_DIR="$HOME/.config/mn"
 
 RED='\033[0;31m'
@@ -42,7 +45,7 @@ printf "${BLUE}Config directory:${NC} %s\n" "$MN_DIR"
 
 printf "${BLUE}Downloading mn...${NC}\n"
 
-curl -fsSL "${CDN}/mn@${VERSION}/VERSION" -o "$MN_DIR/VERSION" 2>/dev/null
+echo "$VERSION" > "$MN_DIR/VERSION"
 
 if curl -fsSL "${CDN}/mn@${VERSION}/mn" -o "$MN_DIR/mn"; then
     chmod +x "$MN_DIR/mn"
