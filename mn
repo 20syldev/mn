@@ -60,6 +60,8 @@ show_help() {
     echo -e "  mn alias        $T_HELP_CMD_ALIAS"
     echo -e "  mn funcs        $T_HELP_CMD_FUNCS"
     echo -e "  mn docs         $T_HELP_CMD_DOCS"
+    echo -e "  mn update       $T_HELP_CMD_UPDATE"
+    echo -e "  mn uninstall    $T_HELP_CMD_UNINSTALL"
     echo -e "  mn help         $T_HELP_CMD_HELP"
     echo ""
     echo -e "  ${BOLD}$T_HELP_NAV${NC}"
@@ -88,6 +90,47 @@ show_help() {
     show_main_menu
 }
 
+# -------------------- UPDATE -------------------- #
+
+mn_update() {
+    local CDN="https://cdn.sylvain.sh/bash"
+    local LATEST
+    LATEST="$(curl -fsSL "${CDN}/mn@latest" | grep -o '"version": *"[^"]*"' | head -1 | cut -d'"' -f4)"
+
+    if [[ -z "$LATEST" ]]; then
+        echo -e "${RED}Failed to fetch latest version${NC}"
+        return 1
+    fi
+
+    if [[ "$LATEST" == "$VERSION" ]]; then
+        echo -e "${GREEN}mn is already up to date${NC} (${CYAN}${VERSION}${NC})"
+        return 0
+    fi
+
+    echo -e "${BLUE}Updating mn${NC} ${CYAN}${VERSION}${NC} → ${CYAN}${LATEST}${NC}\n"
+
+    echo "$LATEST" > "$MN_DIR/VERSION"
+    curl -fsSL "${CDN}/mn@${LATEST}/mn" -o "$MN_DIR/mn" 2>/dev/null && chmod +x "$MN_DIR/mn"
+    echo -e "${GREEN}mn updated${NC}"
+
+    for lib in core crud dat module ui; do
+        curl -fsSL "${CDN}/mn@${LATEST}/lib/${lib}.sh" -o "$MN_DIR/lib/${lib}.sh" 2>/dev/null
+        echo -e "${GREEN}lib/${lib}.sh updated${NC}"
+    done
+
+    for mod in alias config connexions docs funcs repos; do
+        curl -fsSL "${CDN}/mn@${LATEST}/modules/${mod}.sh" -o "$MN_DIR/modules/${mod}.sh" 2>/dev/null
+        echo -e "${GREEN}modules/${mod}.sh updated${NC}"
+    done
+
+    for lang in fr en; do
+        curl -fsSL "${CDN}/mn@${LATEST}/lang/${lang}.sh" -o "$MN_DIR/lang/${lang}.sh" 2>/dev/null
+        echo -e "${GREEN}lang/${lang}.sh updated${NC}"
+    done
+
+    echo -e "\n${GREEN}Done!${NC} mn ${CYAN}${LATEST}${NC}"
+}
+
 # -------------------- ENTRY POINT -------------------- #
 
 main() {
@@ -102,6 +145,14 @@ main() {
             ;;
         help|h|-h|--help)
             show_help
+            return
+            ;;
+        uninstall|delete)
+            config_uninstall
+            return
+            ;;
+        update|u)
+            mn_update
             return
             ;;
         "")
