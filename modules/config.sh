@@ -15,6 +15,7 @@ show_config_menu() {
         "${BLUE}[R]${NC} $T_CONFIG_EDIT_BASHRC"
         "${GREEN}[S]${NC} $T_CONFIG_SOURCE"
         "${CYAN}[L]${NC} $T_CONFIG_LANG"
+        "${RED}[X]${NC} $T_CONFIG_UNINSTALL"
     )
     MENU_ACTIONS=(
         "config_edit_mn"
@@ -23,6 +24,7 @@ show_config_menu() {
         "config_edit_bashrc"
         "config_source_all"
         "config_change_lang"
+        "config_uninstall"
     )
 }
 
@@ -97,4 +99,46 @@ config_change_lang() {
 
     hide_cursor
     show_config_menu
+}
+
+config_uninstall() {
+    clear_screen
+    draw_header "$T_CONFIG_UNINSTALL_TITLE"
+    show_cursor
+
+    echo -e "\n${RED}$T_CONFIG_UNINSTALL_CONFIRM${NC}\n"
+    echo -e "  ${WHITE}1)${NC} $T_YES"
+    echo -e "  ${WHITE}2)${NC} $T_NO"
+    echo -ne "\n${CYAN}${T_CHOICE}:${NC} "
+    read -r confirm_input
+
+    case "$confirm_input" in
+        1|y|Y|yes|oui)
+            # Remove symlink
+            for bin_dir in /usr/local/bin "$HOME/.local/bin" "$HOME/bin"; do
+                [ -L "$bin_dir/mn" ] && rm -f "$bin_dir/mn"
+            done
+
+            # Clean shell config
+            for rc in "$HOME/.bashrc" "$HOME/.bash_profile" "$HOME/.profile" "$HOME/.zshrc"; do
+                if [ -f "$rc" ] && grep -q "# Added by mn installer" "$rc"; then
+                    sed -i '/# Added by mn installer/d;/export PATH=.*mn/d' "$rc"
+                fi
+            done
+
+            # Remove mn function from bash_functions
+            [ -f "$HOME/.bash_functions" ] && sed -i '/^mn()/d' "$HOME/.bash_functions"
+
+            # Remove config directory
+            rm -rf "$MN_DIR"
+
+            show_cursor
+            echo -e "\n${GREEN}$T_CONFIG_UNINSTALL_DONE${NC}\n"
+            exit 0
+            ;;
+        *)
+            hide_cursor
+            show_config_menu
+            ;;
+    esac
 }
