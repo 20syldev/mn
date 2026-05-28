@@ -113,29 +113,26 @@ generic_add() {
                 echo ""
                 ;;
             choice)
-                echo -e "${CYAN}${label}:${NC}"
                 local IFS_BAK="$IFS"
                 IFS='|'
                 local -a choice_items=($choices)
                 IFS="$IFS_BAK"
+                local -a sel_opts=()
+                local c cval cdisplay init_idx=0 ci=0
                 for c in "${choice_items[@]}"; do
-                    local ckey="${c%%:*}"
-                    local crest="${c#*:}"
-                    local cdisplay="${crest#*:}"
-                    echo -e "  ${WHITE}${ckey})${NC} $cdisplay"
+                    cval="${c#*:}"; cval="${cval%%:*}"
+                    cdisplay="${c#*:}"; cdisplay="${cdisplay#*:}"
+                    sel_opts+=("${cval}:::${cdisplay}")
+                    [[ "$cval" == "$default_val" ]] && init_idx=$ci
+                    (( ci++ ))
                 done
-                echo -ne "${CYAN}${T_CHOICE}:${NC} "
-                read -r choice_input
-                for c in "${choice_items[@]}"; do
-                    local ckey="${c%%:*}"
-                    local crest="${c#*:}"
-                    local cvalue="${crest%%:*}"
-                    if [[ "$choice_input" == "$ckey" ]]; then
-                        value="$cvalue"
-                        break
-                    fi
-                done
-                [[ -z "$value" && -z "$choice_input" ]] && value="$default_val"
+                echo -e "${CYAN}${label}:${NC}"
+                _SELECT_INDEX=$init_idx
+                if select_option "" "${sel_opts[@]}"; then
+                    value="$_SELECT_VALUE"
+                else
+                    value="$default_val"
+                fi
                 ;;
         esac
 
@@ -253,30 +250,25 @@ generic_edit() {
                 [[ "$value" == "-" ]] && value=""
                 ;;
             choice)
-                echo -e "${CYAN}$label ${GRAY}($T_CURRENT: $old_val)${CYAN}:${NC}"
                 local IFS_BAK="$IFS"
                 IFS='|'
                 local -a choice_items=($choices)
                 IFS="$IFS_BAK"
+                local -a sel_opts=()
+                local c cval cdisplay init_idx=0 ci=0
                 for c in "${choice_items[@]}"; do
-                    local ckey="${c%%:*}"
-                    local crest="${c#*:}"
-                    local cdisplay="${crest#*:}"
-                    echo -e "  ${WHITE}${ckey})${NC} $cdisplay"
+                    cval="${c#*:}"; cval="${cval%%:*}"
+                    cdisplay="${c#*:}"; cdisplay="${cdisplay#*:}"
+                    sel_opts+=("${cval}:::${cdisplay}")
+                    [[ "$cval" == "$old_val" ]] && init_idx=$ci
+                    (( ci++ ))
                 done
-                echo -ne "${CYAN}${T_CHOICE}:${NC} "
-                read -r choice_input
-                value="$old_val"
-                if [[ -n "$choice_input" ]]; then
-                    for c in "${choice_items[@]}"; do
-                        local ckey="${c%%:*}"
-                        local crest="${c#*:}"
-                        local cvalue="${crest%%:*}"
-                        if [[ "$choice_input" == "$ckey" ]]; then
-                            value="$cvalue"
-                            break
-                        fi
-                    done
+                echo -e "${CYAN}$label ${GRAY}($T_CURRENT: $old_val)${CYAN}:${NC}"
+                _SELECT_INDEX=$init_idx
+                if select_option "" "${sel_opts[@]}"; then
+                    value="$_SELECT_VALUE"
+                else
+                    value="$old_val"
                 fi
                 ;;
         esac
