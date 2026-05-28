@@ -25,38 +25,39 @@ printf "\n"
 
 # ─── Language / Langue ───────────────────────────────────────────────
 
+curl -fsSL "${CDN}/mn@${VERSION}/lang/index" -o /tmp/mn_lang_index 2>/dev/null || true
+if [ ! -s /tmp/mn_lang_index ]; then
+    printf "fr:Français\nen:English\n" > /tmp/mn_lang_index
+fi
+
 printf "${BLUE}Language / Langue:${NC}\n"
-printf "  1) Français\n"
-printf "  2) English (default)\n"
-printf "${CYAN}Choix / Choice [2]:${NC} "
+_i=1
+while IFS=: read -r _code _name; do
+    printf "  %s) %s\n" "$_i" "$_name"
+    _i=$((_i + 1))
+done < /tmp/mn_lang_index
+printf "${CYAN}Choix / Choice [1]:${NC} "
 read -r LANG_CHOICE < /dev/tty
-case "$LANG_CHOICE" in
-    1|fr|FR) LANG_SETTING="fr" ;;
-    *) LANG_SETTING="en" ;;
-esac
+[ -z "$LANG_CHOICE" ] && LANG_CHOICE=1
+LANG_SETTING=$(sed -n "${LANG_CHOICE}p" /tmp/mn_lang_index 2>/dev/null | cut -d: -f1)
+[ -z "$LANG_SETTING" ] && LANG_SETTING="en"
 printf "\n"
+
+# ─── Source language for subsequent prompts ───────────────────────────
+
+curl -fsSL "${CDN}/mn@${VERSION}/lang/${LANG_SETTING}.sh" -o /tmp/mn_lang.sh 2>/dev/null || true
+[ -f /tmp/mn_lang.sh ] && . /tmp/mn_lang.sh
 
 # ─── Editor ──────────────────────────────────────────────────────────
 
-if [ "$LANG_SETTING" = "fr" ]; then
-    printf "${BLUE}Éditeur:${NC}\n"
-    printf "  1) vi [défaut]\n"
-    printf "  2) vim\n"
-    printf "  3) nano\n"
-    printf "  4) zed\n"
-    printf "  5) VS Code (code -n)\n"
-    printf "  6) Personnalisé\n"
-    printf "${CYAN}Choix [1]:${NC} "
-else
-    printf "${BLUE}Editor:${NC}\n"
-    printf "  1) vi [default]\n"
-    printf "  2) vim\n"
-    printf "  3) nano\n"
-    printf "  4) zed\n"
-    printf "  5) VS Code (code -n)\n"
-    printf "  6) Custom\n"
-    printf "${CYAN}Choice [1]:${NC} "
-fi
+printf "${BLUE}${T_CONFIG_EDITOR_TITLE}:${NC}\n"
+printf "  1) vi\n"
+printf "  2) vim\n"
+printf "  3) nano\n"
+printf "  4) zed\n"
+printf "  5) VS Code (code -n)\n"
+printf "  6) ${T_CONFIG_EDITOR_CUSTOM}\n"
+printf "${CYAN}${T_CHOICE} [1]:${NC} "
 read -r EDITOR_CHOICE < /dev/tty
 case "$EDITOR_CHOICE" in
     2|vim) EDITOR_SETTING="vim" ;;
@@ -64,11 +65,7 @@ case "$EDITOR_CHOICE" in
     4|zed) EDITOR_SETTING="zed" ;;
     5|code) EDITOR_SETTING="code -n" ;;
     6)
-        if [ "$LANG_SETTING" = "fr" ]; then
-            printf "${CYAN}Commande:${NC} "
-        else
-            printf "${CYAN}Command:${NC} "
-        fi
+        printf "${CYAN}${T_CONFIG_EDITOR_CUSTOM}:${NC} "
         read -r EDITOR_SETTING < /dev/tty
         ;;
     *) EDITOR_SETTING="vi" ;;
@@ -112,11 +109,13 @@ done
 
 # ─── Download lang/ ───────────────────────────────────────────────────
 
-for lang in fr en; do
-    if curl -fsSL "${CDN}/mn@${VERSION}/lang/${lang}.sh" -o "$MN_DIR/lang/${lang}.sh" 2>/dev/null; then
-        printf "${GREEN}lang/${lang}.sh downloaded${NC}\n"
+while IFS=: read -r _code _name; do
+    [ -z "$_code" ] && continue
+    if curl -fsSL "${CDN}/mn@${VERSION}/lang/${_code}.sh" -o "$MN_DIR/lang/${_code}.sh" 2>/dev/null; then
+        printf "${GREEN}lang/${_code}.sh downloaded${NC}\n"
     fi
-done
+done < /tmp/mn_lang_index
+rm -f /tmp/mn_lang_index /tmp/mn_lang.sh
 
 # ─── Language setting ─────────────────────────────────────────────────
 
