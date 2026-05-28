@@ -15,6 +15,7 @@ show_config_menu() {
         "${BLUE}[R]${NC} $T_CONFIG_EDIT_BASHRC"
         "${GREEN}[S]${NC} $T_CONFIG_SOURCE"
         "${CYAN}[L]${NC} $T_CONFIG_LANG"
+        "${CYAN}[E]${NC} $T_CONFIG_EDITOR"
         "${RED}[X]${NC} $T_CONFIG_UNINSTALL"
     )
     MENU_ACTIONS=(
@@ -24,34 +25,35 @@ show_config_menu() {
         "config_edit_bashrc"
         "config_source_all"
         "config_change_lang"
+        "config_change_editor"
         "config_uninstall"
     )
 }
 
 config_edit_mn() {
     show_cursor
-    code -n "$MN_DIR"
+    $MN_EDITOR "$MN_DIR"
     hide_cursor
     show_config_menu
 }
 
 config_edit_aliases() {
     show_cursor
-    ${EDITOR:-vi} "$BASH_ALIASES"
+    $MN_EDITOR "$BASH_ALIASES"
     hide_cursor
     show_config_menu
 }
 
 config_edit_functions() {
     show_cursor
-    ${EDITOR:-vi} "$BASH_FUNCTIONS"
+    $MN_EDITOR "$BASH_FUNCTIONS"
     hide_cursor
     show_config_menu
 }
 
 config_edit_bashrc() {
     show_cursor
-    ${EDITOR:-vi} "$HOME/.bashrc"
+    $MN_EDITOR "$HOME/.bashrc"
     hide_cursor
     show_config_menu
 }
@@ -95,6 +97,50 @@ config_change_lang() {
         echo -e "\n${GREEN}✓ $T_CONFIG_LANG_CHANGED${NC}"
         sleep 2
         cleanup
+    fi
+
+    hide_cursor
+    show_config_menu
+}
+
+config_change_editor() {
+    clear_screen
+    draw_header "$T_CONFIG_EDITOR_TITLE"
+    show_cursor
+
+    echo -e "${WHITE}$T_CONFIG_EDITOR_CURRENT:${NC} ${CYAN}$MN_EDITOR${NC}\n"
+    echo -e "  ${WHITE}1)${NC} vi"
+    echo -e "  ${WHITE}2)${NC} vim"
+    echo -e "  ${WHITE}3)${NC} nano"
+    echo -e "  ${WHITE}4)${NC} zed"
+    echo -e "  ${WHITE}5)${NC} VS Code (code -n)"
+    echo -e "  ${WHITE}6)${NC} $T_CONFIG_EDITOR_CUSTOM"
+    echo -ne "\n${CYAN}${T_CHOICE}:${NC} "
+    read -r editor_input
+
+    local new_editor="$MN_EDITOR"
+    case "$editor_input" in
+        1) new_editor="vi" ;;
+        2) new_editor="vim" ;;
+        3) new_editor="nano" ;;
+        4) new_editor="zed" ;;
+        5) new_editor="code -n" ;;
+        6)
+            echo -ne "\n${CYAN}$T_CONFIG_EDITOR_CUSTOM:${NC} "
+            read -r new_editor
+            ;;
+    esac
+
+    if [[ -z "${new_editor// }" || "$new_editor" == *"'"* ]]; then
+        new_editor="$MN_EDITOR"
+    fi
+
+    if [[ "$new_editor" != "$MN_EDITOR" ]]; then
+        echo "$new_editor" > "$MN_EDITOR_FILE"
+        MN_EDITOR="$new_editor"
+        regenerate_bash_files
+        echo -e "\n${GREEN}✓ $T_CONFIG_EDITOR_CHANGED${NC}"
+        sleep 2
     fi
 
     hide_cursor

@@ -78,7 +78,7 @@ repos_open() {
     eval path="$path"
 
     spinner_start "$T_REPOS_OPENING ${WHITE}$name${NC}..."
-    code -n "$path"
+    $MN_EDITOR "$path"
     spinner_stop
 
     kill -HUP $PPID 2>/dev/null
