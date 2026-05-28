@@ -43,6 +43,126 @@ confirm_dialog() {
     done
 }
 
+_SELECT_VALUE=""
+_SELECT_INDEX=0
+
+select_option() {
+    local prompt="$1"
+    shift
+    local -a items=("$@")
+    local count=${#items[@]}
+    local selected="${_SELECT_INDEX:-0}"
+    local i label key
+
+    [[ $count -eq 0 ]] && return 1
+    (( selected >= count )) && selected=0
+
+    hide_cursor
+    [[ -n "$prompt" ]] && echo -e "${CYAN}${prompt}${NC}"
+
+    for (( i=0; i<count; i++ )); do
+        tput el
+        label="${items[$i]#*:::}"
+        if [[ $i -eq $selected ]]; then
+            echo -e "  ${REVERSE} ${label} ${RESET}"
+        else
+            echo -e "    ${label}"
+        fi
+    done
+    tput el
+    echo -e "\n${DIM}  $T_FOOTER_BASE  $T_FOOTER_SELECT${NC}"
+
+    while true; do
+        read -rsn1 key
+        if [[ "$key" == $'\x1b' ]]; then
+            read -rsn2 -t 0.1 key
+            case "$key" in
+                '[A') key="UP" ;;
+                '[B') key="DOWN" ;;
+                *) key="ESC" ;;
+            esac
+        fi
+
+        case "$key" in
+            UP|k)
+                (( selected-- ))
+                [[ $selected -lt 0 ]] && selected=$(( count - 1 ))
+                ;;
+            DOWN|j)
+                (( selected++ ))
+                [[ $selected -ge $count ]] && selected=0
+                ;;
+            ''|$'\n')
+                _SELECT_VALUE="${items[$selected]%%:::*}"
+                _SELECT_INDEX=$selected
+                show_cursor
+                return 0
+                ;;
+            q|r|R|ESC)
+                show_cursor
+                return 1
+                ;;
+        esac
+
+        for (( i=0; i<count+2; i++ )); do
+            tput cuu1
+        done
+        for (( i=0; i<count; i++ )); do
+            tput el
+            label="${items[$i]#*:::}"
+            if [[ $i -eq $selected ]]; then
+                echo -e "  ${REVERSE} ${label} ${RESET}"
+            else
+                echo -e "    ${label}"
+            fi
+        done
+        tput el
+        echo -e "\n${DIM}  $T_FOOTER_BASE  $T_FOOTER_SELECT${NC}"
+    done
+}
+
+toggle_switch() {
+    local state="$1"
+    local label_on="$2"
+    local label_off="$3"
+    local key
+
+    hide_cursor
+
+    tput el
+    if [[ "$state" == "1" ]]; then
+        echo -e "  ${WHITE}[${GREEN}● ${label_on}${WHITE}]${NC}   ${DIM}○ ${label_off}${NC}"
+    else
+        echo -e "  ${DIM}○ ${label_on}${NC}   ${WHITE}[${RED}○ ${label_off}${WHITE}]${NC}"
+    fi
+
+    while true; do
+        read -rsn1 key
+        if [[ "$key" == $'\x1b' ]]; then
+            read -rsn2 -t 0.1 key
+            case "$key" in
+                '[C'|'[D') state=$(( 1 - state )) ;;
+            esac
+        else
+            case "$key" in
+                h|l|' ') state=$(( 1 - state )) ;;
+                ''|$'\n')
+                    show_cursor
+                    return "$state"
+                    ;;
+            esac
+        fi
+
+        tput cuu1
+        tput el
+        if [[ "$state" == "1" ]]; then
+            echo -e "  ${WHITE}[${GREEN}● ${label_on}${WHITE}]${NC}   ${DIM}○ ${label_off}${NC}"
+        else
+            echo -e "  ${DIM}○ ${label_on}${NC}   ${WHITE}[${RED}○ ${label_off}${WHITE}]${NC}"
+        fi
+    done
+}
+
 draw_footer() {
     local is_crud_menu=false
     for mod in $ALL_MODULES; do
