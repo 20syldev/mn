@@ -26,6 +26,13 @@ MN_LANG="fr"
 [[ "$MN_LANG" != "fr" && "$MN_LANG" != "en" ]] && MN_LANG="fr"
 source "$MN_DIR/lang/${MN_LANG}.sh"
 
+# -------------------- EDITOR -------------------- #
+
+MN_EDITOR_FILE="$MN_DIR/.editor"
+MN_EDITOR="vi"
+[[ -f "$MN_EDITOR_FILE" ]] && MN_EDITOR=$(cat "$MN_EDITOR_FILE")
+[[ -z "${MN_EDITOR// }" ]] && MN_EDITOR="vi"
+
 # -------------------- COLORS AND STYLES -------------------- #
 
 RED='\033[0;31m'
@@ -122,7 +129,7 @@ regenerate_bash_files() {
             local name="${line%%:::*}"
             local rest="${line#*:::}"
             local path="${rest%%:::*}"
-            echo "alias $name='code -n $path && exit;'" >> "$tmp_aliases"
+            echo "alias $name='$MN_EDITOR $path && exit;'" >> "$tmp_aliases"
         done < "$REPOS_FILE"
     fi
 
