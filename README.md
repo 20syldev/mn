@@ -67,7 +67,7 @@ Short aliases are also supported: `mn r` (repos), `mn a` (alias), `mn f` (funcs)
 ## Features
 
 - **SSH/Custom connections** — store servers with label, IP, connection type (SSH or custom command) and optional password, connect in one keystroke
-- **GitHub repos** — create aliases to local directories and open them in VS Code
+- **GitHub repos** — create aliases to local directories and open them in your configured editor
 - **Bash aliases** — add, edit, delete aliases with automatic sync to `~/.bash_aliases`
 - **Shell functions** — manage Bash functions with sync to `~/.bash_functions`
 - **Documentation** — read Markdown files directly in the terminal
@@ -134,9 +134,7 @@ mkcd:::mkdir -p "$1" && cd "$1";:::Create directory and move into it
 
 ### Change default editor
 
-```bash
-export EDITOR=vim   # or code, nano, micro...
-```
+Choose at install, or via `mn config` → **Change editor**. Presets: `vi`, `vim`, `nano`, `zed`, `code -n` or any custom command. Setting stored in `~/.config/mn/.editor`.
 
 ### Modify colors
 
