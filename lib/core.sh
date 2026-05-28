@@ -23,7 +23,7 @@ BASH_FUNCTIONS="$HOME/.bash_functions"
 MN_LANG_FILE="$MN_DIR/.lang"
 MN_LANG="fr"
 [[ -f "$MN_LANG_FILE" ]] && MN_LANG=$(cat "$MN_LANG_FILE")
-[[ "$MN_LANG" != "fr" && "$MN_LANG" != "en" ]] && MN_LANG="fr"
+[[ ! -f "$MN_DIR/lang/${MN_LANG}.sh" ]] && MN_LANG="fr"
 source "$MN_DIR/lang/${MN_LANG}.sh"
 
 # -------------------- EDITOR -------------------- #
