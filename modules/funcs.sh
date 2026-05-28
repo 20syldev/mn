@@ -76,13 +76,13 @@ _funcs_view() {
     LAST_MENU=""
 }
 
-# Custom edit: open in vi
+# Custom edit: open in the configured editor
 funcs_edit() {
     local name="$1"
     show_cursor
 
     if [[ -f "/usr/local/bin/$name" ]]; then
-        vi "/usr/local/bin/$name"
+        $MN_EDITOR "/usr/local/bin/$name"
     else
         clear_screen
         draw_header "${T_EDIT_PREFIX}: $name"
@@ -93,7 +93,7 @@ funcs_edit() {
     show_funcs_menu
 }
 
-# Post-add: create script and open in vi
+# Post-add: create script and open in the configured editor
 _funcs_post_add() {
     local name="$1"
     if [[ ! -f "/usr/local/bin/$name" ]]; then
@@ -102,7 +102,7 @@ _funcs_post_add() {
     fi
     echo -e "  ${CYAN}$T_FUNCS_OPEN_EDITOR /usr/local/bin/$name...${NC}"
     sleep 1
-    vi "/usr/local/bin/$name"
+    $MN_EDITOR "/usr/local/bin/$name"
 }
 
 # Custom deletion: double confirmation
