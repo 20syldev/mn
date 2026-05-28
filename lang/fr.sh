@@ -137,7 +137,7 @@ T_FUNCS_DEL_ENTRY="Entrée supprimée (fichier conservé)"
 
 # -------------------- MODULE CONFIG -------------------- #
 
-T_CONFIG_EDIT_MN="Éditer MN dans VSCode"
+T_CONFIG_EDIT_MN="Éditer MN"
 T_CONFIG_EDIT_ALIASES="Éditer ~/.bash_aliases"
 T_CONFIG_EDIT_FUNCS="Éditer ~/.bash_functions"
 T_CONFIG_EDIT_BASHRC="Éditer ~/.bashrc"
@@ -153,3 +153,8 @@ T_CONFIG_REGEN_DONE="Fichiers régénérés ! Sourcés automatiquement à la fer
 T_CONFIG_LANG_TITLE="LANGUE / LANGUAGE"
 T_CONFIG_LANG_CURRENT="Langue actuelle"
 T_CONFIG_LANG_CHANGED="Langue modifiée. Relancez mn pour appliquer."
+T_CONFIG_EDITOR="Changer l'éditeur"
+T_CONFIG_EDITOR_TITLE="ÉDITEUR"
+T_CONFIG_EDITOR_CURRENT="Éditeur actuel"
+T_CONFIG_EDITOR_CUSTOM="Commande personnalisée"
+T_CONFIG_EDITOR_CHANGED="Éditeur modifié."
