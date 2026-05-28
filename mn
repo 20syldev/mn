@@ -123,10 +123,15 @@ mn_update() {
         echo -e "${GREEN}modules/${mod}.sh updated${NC}"
     done
 
-    for lang in fr en; do
-        curl -fsSL "${CDN}/mn@${LATEST}/lang/${lang}.sh" -o "$MN_DIR/lang/${lang}.sh" 2>/dev/null
-        echo -e "${GREEN}lang/${lang}.sh updated${NC}"
-    done
+    curl -fsSL "${CDN}/mn@${LATEST}/lang/index" -o /tmp/mn_lang_index 2>/dev/null
+    if [[ -s /tmp/mn_lang_index ]]; then
+        while IFS=: read -r code _name; do
+            [[ -z "$code" ]] && continue
+            curl -fsSL "${CDN}/mn@${LATEST}/lang/${code}.sh" -o "$MN_DIR/lang/${code}.sh" 2>/dev/null
+            echo -e "${GREEN}lang/${code}.sh updated${NC}"
+        done < /tmp/mn_lang_index
+        rm -f /tmp/mn_lang_index
+    fi
 
     source "$MN_DIR/lib/core.sh"
     regenerate_bash_files

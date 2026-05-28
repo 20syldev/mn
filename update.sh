@@ -43,9 +43,9 @@ done
 
 # ─── Update lang/ ─────────────────────────────────────────────────────
 
-for lang in fr en; do
-    cp "$SCRIPT_DIR/lang/${lang}.sh" "$MN_DIR/lang/${lang}.sh"
-    printf "${GREEN}lang/${lang}.sh updated${NC}\n"
+for f in "$SCRIPT_DIR"/lang/*.sh; do
+    cp "$f" "$MN_DIR/lang/$(basename "$f")"
+    printf "${GREEN}lang/$(basename "$f") updated${NC}\n"
 done
 
 # ─── Done ─────────────────────────────────────────────────────────────
