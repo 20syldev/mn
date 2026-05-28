@@ -81,16 +81,32 @@ config_change_lang() {
     show_cursor
 
     echo -e "${WHITE}$T_CONFIG_LANG_CURRENT:${NC} ${CYAN}$MN_LANG${NC}\n"
-    echo -e "  ${WHITE}1)${NC} Français"
-    echo -e "  ${WHITE}2)${NC} English"
+
+    local langs=() names=() f code name i=1
+    for f in "$MN_DIR"/lang/*.sh; do
+        [[ -f "$f" ]] || continue
+        code=$(basename "$f" .sh)
+        name=$(. "$f" 2>/dev/null; printf '%s' "${LANG_DISPLAY_NAME:-$code}")
+        langs+=("$code")
+        names+=("$name")
+        echo -e "  ${WHITE}${i})${NC} $name"
+        ((i++))
+    done
+
     echo -ne "\n${CYAN}${T_CHOICE}:${NC} "
     read -r lang_input
 
-    local new_lang="$MN_LANG"
-    case "$lang_input" in
-        1|fr|FR) new_lang="fr" ;;
-        2|en|EN) new_lang="en" ;;
-    esac
+    local new_lang="$MN_LANG" j
+    if [[ "$lang_input" =~ ^[0-9]+$ ]] && (( lang_input >= 1 && lang_input < i )); then
+        new_lang="${langs[lang_input-1]}"
+    else
+        for j in "${!langs[@]}"; do
+            if [[ "${langs[j]}" == "$lang_input" ]]; then
+                new_lang="${langs[j]}"
+                break
+            fi
+        done
+    fi
 
     if [[ "$new_lang" != "$MN_LANG" ]]; then
         echo "$new_lang" > "$MN_LANG_FILE"
