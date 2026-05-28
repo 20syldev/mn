@@ -36,6 +36,45 @@ case "$LANG_CHOICE" in
 esac
 printf "\n"
 
+# ─── Editor ──────────────────────────────────────────────────────────
+
+if [ "$LANG_SETTING" = "fr" ]; then
+    printf "${BLUE}Éditeur:${NC}\n"
+    printf "  1) vi [défaut]\n"
+    printf "  2) vim\n"
+    printf "  3) nano\n"
+    printf "  4) zed\n"
+    printf "  5) VS Code (code -n)\n"
+    printf "  6) Personnalisé\n"
+    printf "${CYAN}Choix [1]:${NC} "
+else
+    printf "${BLUE}Editor:${NC}\n"
+    printf "  1) vi [default]\n"
+    printf "  2) vim\n"
+    printf "  3) nano\n"
+    printf "  4) zed\n"
+    printf "  5) VS Code (code -n)\n"
+    printf "  6) Custom\n"
+    printf "${CYAN}Choice [1]:${NC} "
+fi
+read -r EDITOR_CHOICE < /dev/tty
+case "$EDITOR_CHOICE" in
+    2|vim) EDITOR_SETTING="vim" ;;
+    3|nano) EDITOR_SETTING="nano" ;;
+    4|zed) EDITOR_SETTING="zed" ;;
+    5|code) EDITOR_SETTING="code -n" ;;
+    6)
+        if [ "$LANG_SETTING" = "fr" ]; then
+            printf "${CYAN}Commande:${NC} "
+        else
+            printf "${CYAN}Command:${NC} "
+        fi
+        read -r EDITOR_SETTING < /dev/tty
+        ;;
+    *) EDITOR_SETTING="vi" ;;
+esac
+printf "\n"
+
 # ─── Create directories ───────────────────────────────────────────────
 
 mkdir -p "$MN_DIR/lib" "$MN_DIR/modules" "$MN_DIR/data" "$MN_DIR/docs" "$MN_DIR/lang"
@@ -83,6 +122,9 @@ done
 
 echo "$LANG_SETTING" > "$MN_DIR/.lang"
 printf "${GREEN}Language set to: ${LANG_SETTING}${NC}\n"
+
+echo "$EDITOR_SETTING" > "$MN_DIR/.editor"
+printf "${GREEN}Editor set to: ${EDITOR_SETTING}${NC}\n"
 
 # ─── Init data files ──────────────────────────────────────────────────
 
