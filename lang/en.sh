@@ -3,6 +3,8 @@
 # MN - English translations
 # =========================================================
 
+LANG_DISPLAY_NAME="English"
+
 # -------------------- GENERIC -------------------- #
 
 T_OR="or"
