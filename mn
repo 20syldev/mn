@@ -128,6 +128,9 @@ mn_update() {
         echo -e "${GREEN}lang/${lang}.sh updated${NC}"
     done
 
+    source "$MN_DIR/lib/core.sh"
+    regenerate_bash_files
+
     echo -e "\n${GREEN}Done!${NC} mn ${CYAN}${LATEST}${NC}"
 }
 
