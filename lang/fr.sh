@@ -1,9 +1,11 @@
 #!/bin/bash
 # =========================================================
-# MN - Traductions françaises
+# MN - French translations
 # =========================================================
 
-# -------------------- GÉNÉRIQUES -------------------- #
+LANG_DISPLAY_NAME="Français"
+
+# -------------------- GENERIC -------------------- #
 
 T_OR="ou"
 T_YES="Oui"
@@ -50,7 +52,7 @@ T_MENU_HELP="HELP - Aide"
 T_MENU_TITLE_CONFIG="CONFIGURATION"
 T_MENU_TITLE_DOCS="DOCUMENTATION"
 
-# -------------------- AIDE -------------------- #
+# -------------------- HELP -------------------- #
 
 T_HELP_TITLE="AIDE - MN"
 T_HELP_USAGE="UTILISATION"
@@ -71,7 +73,7 @@ T_HELP_NAV_BACK="Retour au menu principal"
 T_HELP_NAV_QUIT="Quitter"
 T_HELP_NAV_ACTIONS="Éditer / Supprimer / Voir"
 
-# -------------------- ERREURS -------------------- #
+# -------------------- ERRORS -------------------- #
 
 T_ERR_UNKNOWN="Option inconnue"
 T_ERR_HELP_HINT="Utilisez mn help pour voir l'aide"
