@@ -78,41 +78,29 @@ config_source_all() {
 config_change_lang() {
     clear_screen
     draw_header "$T_CONFIG_LANG_TITLE"
-    show_cursor
 
     echo -e "${WHITE}$T_CONFIG_LANG_CURRENT:${NC} ${CYAN}$MN_LANG${NC}\n"
 
-    local langs=() names=() f code name i=1
+    local -a sel_opts=()
+    local f code name init_idx=0 idx=0
     for f in "$MN_DIR"/lang/*.sh; do
         [[ -f "$f" ]] || continue
         code=$(basename "$f" .sh)
         name=$(. "$f" 2>/dev/null; printf '%s' "${LANG_DISPLAY_NAME:-$code}")
-        langs+=("$code")
-        names+=("$name")
-        echo -e "  ${WHITE}${i})${NC} $name"
-        ((i++))
+        sel_opts+=("${code}:::${name}")
+        [[ "$code" == "$MN_LANG" ]] && init_idx=$idx
+        (( idx++ ))
     done
 
-    echo -ne "\n${CYAN}${T_CHOICE}:${NC} "
-    read -r lang_input
-
-    local new_lang="$MN_LANG" j
-    if [[ "$lang_input" =~ ^[0-9]+$ ]] && (( lang_input >= 1 && lang_input < i )); then
-        new_lang="${langs[lang_input-1]}"
-    else
-        for j in "${!langs[@]}"; do
-            if [[ "${langs[j]}" == "$lang_input" ]]; then
-                new_lang="${langs[j]}"
-                break
-            fi
-        done
-    fi
-
-    if [[ "$new_lang" != "$MN_LANG" ]]; then
-        echo "$new_lang" > "$MN_LANG_FILE"
-        echo -e "\n${GREEN}✓ $T_CONFIG_LANG_CHANGED${NC}"
-        sleep 2
-        cleanup
+    _SELECT_INDEX=$init_idx
+    if select_option "" "${sel_opts[@]}"; then
+        local new_lang="$_SELECT_VALUE"
+        if [[ "$new_lang" != "$MN_LANG" ]]; then
+            echo "$new_lang" > "$MN_LANG_FILE"
+            echo -e "\n${GREEN}✓ $T_CONFIG_LANG_CHANGED${NC}"
+            sleep 2
+            cleanup
+        fi
     fi
 
     hide_cursor
@@ -122,41 +110,39 @@ config_change_lang() {
 config_change_editor() {
     clear_screen
     draw_header "$T_CONFIG_EDITOR_TITLE"
-    show_cursor
 
     echo -e "${WHITE}$T_CONFIG_EDITOR_CURRENT:${NC} ${CYAN}$MN_EDITOR${NC}\n"
-    echo -e "  ${WHITE}1)${NC} vi"
-    echo -e "  ${WHITE}2)${NC} vim"
-    echo -e "  ${WHITE}3)${NC} nano"
-    echo -e "  ${WHITE}4)${NC} zed"
-    echo -e "  ${WHITE}5)${NC} VS Code (code -n)"
-    echo -e "  ${WHITE}6)${NC} $T_CONFIG_EDITOR_CUSTOM"
-    echo -ne "\n${CYAN}${T_CHOICE}:${NC} "
-    read -r editor_input
 
-    local new_editor="$MN_EDITOR"
-    case "$editor_input" in
-        1) new_editor="vi" ;;
-        2) new_editor="vim" ;;
-        3) new_editor="nano" ;;
-        4) new_editor="zed" ;;
-        5) new_editor="code -n" ;;
-        6)
+    local preset_vals=("vi" "vim" "nano" "zed" "code -n")
+    local preset_labels=("vi" "vim" "nano" "zed" "VS Code (code -n)")
+    local -a sel_opts=()
+    local init_idx=5 i
+    for (( i=0; i<${#preset_vals[@]}; i++ )); do
+        sel_opts+=("${preset_vals[$i]}:::${preset_labels[$i]}")
+        [[ "${preset_vals[$i]}" == "$MN_EDITOR" ]] && init_idx=$i
+    done
+    sel_opts+=("__custom__:::$T_CONFIG_EDITOR_CUSTOM")
+
+    _SELECT_INDEX=$init_idx
+    if select_option "" "${sel_opts[@]}"; then
+        local new_editor="$_SELECT_VALUE"
+        if [[ "$new_editor" == "__custom__" ]]; then
+            show_cursor
             echo -ne "\n${CYAN}$T_CONFIG_EDITOR_CUSTOM:${NC} "
             read -r new_editor
-            ;;
-    esac
+        fi
 
-    if [[ -z "${new_editor// }" || "$new_editor" == *"'"* ]]; then
-        new_editor="$MN_EDITOR"
-    fi
+        if [[ -z "${new_editor// }" || "$new_editor" == *"'"* ]]; then
+            new_editor="$MN_EDITOR"
+        fi
 
-    if [[ "$new_editor" != "$MN_EDITOR" ]]; then
-        echo "$new_editor" > "$MN_EDITOR_FILE"
-        MN_EDITOR="$new_editor"
-        regenerate_bash_files
-        echo -e "\n${GREEN}✓ $T_CONFIG_EDITOR_CHANGED${NC}"
-        sleep 2
+        if [[ "$new_editor" != "$MN_EDITOR" ]]; then
+            echo "$new_editor" > "$MN_EDITOR_FILE"
+            MN_EDITOR="$new_editor"
+            regenerate_bash_files
+            echo -e "\n${GREEN}✓ $T_CONFIG_EDITOR_CHANGED${NC}"
+            sleep 2
+        fi
     fi
 
     hide_cursor
@@ -166,41 +152,33 @@ config_change_editor() {
 config_uninstall() {
     clear_screen
     draw_header "$T_CONFIG_UNINSTALL_TITLE"
-    show_cursor
 
     echo -e "\n${RED}$T_CONFIG_UNINSTALL_CONFIRM${NC}\n"
-    echo -e "  ${WHITE}1)${NC} $T_YES"
-    echo -e "  ${WHITE}2)${NC} $T_NO"
-    echo -ne "\n${CYAN}${T_CHOICE}:${NC} "
-    read -r confirm_input
 
-    case "$confirm_input" in
-        1|y|Y|yes|oui)
-            # Remove symlink
-            for bin_dir in /usr/local/bin "$HOME/.local/bin" "$HOME/bin"; do
-                [ -L "$bin_dir/mn" ] && rm -f "$bin_dir/mn"
-            done
+    if confirm_dialog; then
+        # Remove symlink
+        for bin_dir in /usr/local/bin "$HOME/.local/bin" "$HOME/bin"; do
+            [ -L "$bin_dir/mn" ] && rm -f "$bin_dir/mn"
+        done
 
-            # Clean shell config
-            for rc in "$HOME/.bashrc" "$HOME/.bash_profile" "$HOME/.profile" "$HOME/.zshrc"; do
-                if [ -f "$rc" ] && grep -q "# Added by mn installer" "$rc"; then
-                    sed -i '/# Added by mn installer/d;/export PATH=.*mn/d' "$rc"
-                fi
-            done
+        # Clean shell config
+        for rc in "$HOME/.bashrc" "$HOME/.bash_profile" "$HOME/.profile" "$HOME/.zshrc"; do
+            if [ -f "$rc" ] && grep -q "# Added by mn installer" "$rc"; then
+                sed -i '/# Added by mn installer/d;/export PATH=.*mn/d' "$rc"
+            fi
+        done
 
-            # Remove mn function from bash_functions
-            [ -f "$HOME/.bash_functions" ] && sed -i '/^mn()/d' "$HOME/.bash_functions"
+        # Remove mn function from bash_functions
+        [ -f "$HOME/.bash_functions" ] && sed -i '/^mn()/d' "$HOME/.bash_functions"
 
-            # Remove config directory
-            rm -rf "$MN_DIR"
+        # Remove config directory
+        rm -rf "$MN_DIR"
 
-            show_cursor
-            echo -e "\n${GREEN}$T_CONFIG_UNINSTALL_DONE${NC}\n"
-            exit 0
-            ;;
-        *)
-            hide_cursor
-            show_config_menu
-            ;;
-    esac
+        show_cursor
+        echo -e "\n${GREEN}$T_CONFIG_UNINSTALL_DONE${NC}\n"
+        exit 0
+    fi
+
+    hide_cursor
+    show_config_menu
 }
