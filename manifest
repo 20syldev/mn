@@ -1,4 +1,6 @@
 mn
+completions/mn.bash
+completions/_mn
 lib/core.sh
 lib/crud.sh
 lib/dat.sh
