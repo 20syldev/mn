@@ -145,6 +145,7 @@ regenerate_bash_files() {
     echo '[[ -f ~/.bash_functions ]] && source ~/.bash_functions' >> "$BASH_ALIASES"
 
     echo 'mn() { ~/.config/mn/mn "$@" && source ~/.bash_aliases; if [[ -f /tmp/mn_run_cmd ]]; then local _mn_cmd; _mn_cmd=$(cat /tmp/mn_run_cmd); rm -f /tmp/mn_run_cmd; read -e -i "$_mn_cmd" _mn_cmd && history -s "$_mn_cmd" && eval "$_mn_cmd"; fi; }' >> "$tmp_functions"
+    echo '[[ -f ~/.local/share/bash-completion/completions/mn ]] && source ~/.local/share/bash-completion/completions/mn' >> "$tmp_functions"
 
     if [[ -f "$FUNCS_FILE" && -s "$FUNCS_FILE" ]]; then
         while IFS= read -r line || [[ -n "$line" ]]; do
