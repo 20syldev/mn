@@ -398,6 +398,7 @@ quit_menu() {
 main_loop() {
     hide_cursor
     trap 'cleanup' INT TERM EXIT
+    tput clear
 
     show_main_menu
     draw_menu "$T_MENU_TITLE" "true"
