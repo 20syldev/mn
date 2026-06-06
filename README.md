@@ -16,17 +16,6 @@ curl -fsSL https://cdn.sylvain.sh/bash/mn@latest/install.sh | sh
 ./install.sh
 ```
 
-### Update from local repo
-
-```bash
-./update.sh
-```
-
-Or manually:
-
-```bash
-cp -r mn lib/ modules/ lang/ ~/.config/mn/ && chmod +x ~/.config/mn/mn
-```
 
 ## Usage
 
