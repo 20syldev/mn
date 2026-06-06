@@ -201,3 +201,17 @@ T_PLUGIN_HELP_LIST="List installed plugins"
 T_PLUGIN_HELP_INSTALL="Install a plugin from CDN, URL or path"
 T_PLUGIN_HELP_REMOVE="Remove an installed plugin"
 T_PLUGIN_HELP_INFO="Show plugin details"
+
+# -------------------- UNINSTALL -------------------- #
+
+T_UNINSTALL_SELECT="What do you want to remove?"
+T_UNINSTALL_ALL="Remove everything"
+T_UNINSTALL_CORE="Core (mn, lib, modules)"
+T_UNINSTALL_CONFIG="Configuration (.lang, .editor)"
+T_UNINSTALL_DATA="Data (aliases, repos, ...)"
+T_UNINSTALL_PLUGINS="Plugins"
+T_UNINSTALL_FOOTER="↑↓/jk: move  space: toggle  enter: confirm"
+T_UNINSTALL_REMOVED_CORE="Core removed."
+T_UNINSTALL_REMOVED_CONFIG="Configuration removed."
+T_UNINSTALL_REMOVED_DATA="Data removed."
+T_UNINSTALL_REMOVED_PLUGINS="Plugins removed."
