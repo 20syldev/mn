@@ -204,6 +204,15 @@ config_uninstall() {
         # Remove mn function from bash_functions
         [ -f "$HOME/.bash_functions" ] && sed -i '/^mn()/d' "$HOME/.bash_functions"
 
+        # Remove completions
+        for comp_file in \
+            "/usr/share/bash-completion/completions/mn" \
+            "$HOME/.local/share/bash-completion/completions/mn" \
+            "/usr/share/zsh/vendor-completions/_mn" \
+            "$HOME/.local/share/zsh/site-functions/_mn"; do
+            [ -f "$comp_file" ] && rm -f "$comp_file"
+        done
+
         # Remove config directory
         rm -rf "$MN_DIR"
 
