@@ -158,10 +158,27 @@ mn_update() {
         rm -f /tmp/mn_lang_index
     fi
 
+    # Install completions
+    local bash_comp_dir zsh_comp_dir
+    if [[ -w "/usr/share/bash-completion/completions" ]]; then
+        bash_comp_dir="/usr/share/bash-completion/completions"
+    else
+        bash_comp_dir="$HOME/.local/share/bash-completion/completions"
+        mkdir -p "$bash_comp_dir"
+    fi
+    if [[ -w "/usr/share/zsh/vendor-completions" ]]; then
+        zsh_comp_dir="/usr/share/zsh/vendor-completions"
+    else
+        zsh_comp_dir="$HOME/.local/share/zsh/site-functions"
+        mkdir -p "$zsh_comp_dir"
+    fi
+    [[ -f "$MN_DIR/completions/mn.bash" ]] && cp "$MN_DIR/completions/mn.bash" "$bash_comp_dir/mn" && echo -e "${GREEN}bash completion ${T_UPDATED}${NC}"
+    [[ -f "$MN_DIR/completions/_mn" ]] && cp "$MN_DIR/completions/_mn" "$zsh_comp_dir/_mn" && echo -e "${GREEN}zsh completion ${T_UPDATED}${NC}"
+
     source "$MN_DIR/lib/core.sh"
     regenerate_bash_files
 
-    echo -e "\n${GREEN}Done!${NC} mn ${CYAN}${LATEST}${NC}"
+    echo -e "\n${GREEN}${T_UPDATE_DONE}${NC} ${CYAN}${LATEST}${NC}"
 }
 
 # -------------------- ENTRY POINT -------------------- #
