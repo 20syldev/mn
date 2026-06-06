@@ -185,26 +185,40 @@ ALL_MODULES="${ALL_MODULES:+$ALL_MODULES }config"
 config_uninstall() {
     clear_screen
     draw_header "$T_CONFIG_UNINSTALL_TITLE"
+    echo ""
 
-    echo -e "\n${RED}$T_CONFIG_UNINSTALL_CONFIRM${NC}\n"
+    checkbox_select "$T_UNINSTALL_SELECT" \
+        "$T_UNINSTALL_ALL" \
+        "$T_UNINSTALL_CORE" \
+        "$T_UNINSTALL_CONFIG" \
+        "$T_UNINSTALL_DATA" \
+        "$T_UNINSTALL_PLUGINS"
 
-    if confirm_dialog; then
-        # Remove symlink
+    if [[ $? -ne 0 ]] || [[ ${_CHK_CORE:-0} -eq 0 && ${_CHK_CONFIG:-0} -eq 0 && \
+          ${_CHK_DATA:-0} -eq 0 && ${_CHK_PLUGINS:-0} -eq 0 ]]; then
+        hide_cursor
+        show_config_menu
+        return
+    fi
+
+    show_cursor; clear_screen
+
+    # Core: symlink + shell PATH + lib/ modules/ completions/ docs/ mn VERSION manifest
+    if [[ ${_CHK_CORE:-0} -eq 1 ]]; then
         for bin_dir in /usr/local/bin "$HOME/.local/bin" "$HOME/bin"; do
-            [ -L "$bin_dir/mn" ] && rm -f "$bin_dir/mn"
+            if [ -L "$bin_dir/mn" ]; then
+                rm -f "$bin_dir/mn" 2>/dev/null || true
+            fi
         done
 
-        # Clean shell config
         for rc in "$HOME/.bashrc" "$HOME/.bash_profile" "$HOME/.profile" "$HOME/.zshrc"; do
             if [ -f "$rc" ] && grep -q "# Added by mn installer" "$rc"; then
                 sed -i '/# Added by mn installer/d;/export PATH=.*mn/d' "$rc"
             fi
         done
 
-        # Remove mn function from bash_functions
         [ -f "$HOME/.bash_functions" ] && sed -i '/^mn()/d' "$HOME/.bash_functions"
 
-        # Remove completions
         for comp_file in \
             "/usr/share/bash-completion/completions/mn" \
             "$HOME/.local/share/bash-completion/completions/mn" \
@@ -213,14 +227,39 @@ config_uninstall() {
             [ -f "$comp_file" ] && rm -f "$comp_file"
         done
 
-        # Remove config directory
-        rm -rf "$MN_DIR"
-
-        show_cursor
-        echo -e "\n${GREEN}$T_CONFIG_UNINSTALL_DONE${NC}\n"
-        exit 0
+        rm -rf "$MN_DIR/lib" "$MN_DIR/modules" "$MN_DIR/completions" "$MN_DIR/docs"
+        rm -f  "$MN_DIR/mn" "$MN_DIR/VERSION" "$MN_DIR/manifest"
     fi
 
-    hide_cursor
-    show_config_menu
+    # Configuration
+    if [[ ${_CHK_CONFIG:-0} -eq 1 ]]; then
+        rm -f  "$MN_DIR/.lang" "$MN_DIR/.editor" "$MN_DIR/.cdn"
+        rm -rf "$MN_DIR/lang"
+    fi
+
+    # Data
+    if [[ ${_CHK_DATA:-0} -eq 1 ]]; then
+        rm -rf "$MN_DIR/data"
+    fi
+
+    # Plugins
+    if [[ ${_CHK_PLUGINS:-0} -eq 1 ]]; then
+        rm -rf "$MN_DIR/plugins"
+    fi
+
+    # Remove parent dir if everything selected
+    if [[ ${_CHK_CORE:-0} -eq 1 && ${_CHK_CONFIG:-0} -eq 1 && \
+          ${_CHK_DATA:-0} -eq 1 && ${_CHK_PLUGINS:-0} -eq 1 ]]; then
+        rm -rf "$MN_DIR"
+    fi
+
+    echo -e "\n${GREEN}$T_CONFIG_UNINSTALL_DONE${NC}\n"
+
+    if [[ ${_CHK_CORE:-0} -eq 1 ]]; then
+        exit 0
+    else
+        read -n 1 -s
+        hide_cursor
+        show_config_menu
+    fi
 }
