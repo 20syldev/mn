@@ -33,6 +33,13 @@ MN_EDITOR="vi"
 [[ -f "$MN_EDITOR_FILE" ]] && MN_EDITOR=$(cat "$MN_EDITOR_FILE")
 [[ -z "${MN_EDITOR// }" ]] && MN_EDITOR="vi"
 
+# -------------------- CDN -------------------- #
+
+MN_CDN_FILE="$MN_DIR/.cdn"
+MN_CDN="https://cdn.sylvain.sh/bash"
+[[ -f "$MN_CDN_FILE" ]] && MN_CDN=$(cat "$MN_CDN_FILE")
+[[ -z "${MN_CDN// }" ]] && MN_CDN="https://cdn.sylvain.sh/bash"
+
 # -------------------- COLORS AND STYLES -------------------- #
 
 RED='\033[0;31m'
