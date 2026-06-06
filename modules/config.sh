@@ -114,7 +114,7 @@ config_change_editor() {
     echo -e "${WHITE}$T_CONFIG_EDITOR_CURRENT:${NC} ${CYAN}$MN_EDITOR${NC}\n"
 
     local preset_vals=("vi" "vim" "nano" "zed" "code -n")
-    local preset_labels=("vi" "vim" "nano" "zed" "VS Code (code -n)")
+    local preset_labels=("vi" "vim" "nano" "zed" "Visual Studio Code")
     local -a sel_opts=()
     local init_idx=5 i
     for (( i=0; i<${#preset_vals[@]}; i++ )); do

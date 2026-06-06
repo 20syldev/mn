@@ -74,9 +74,9 @@ connexions_connect() {
     trap - INT TERM EXIT
 
     if [[ "$conn_type" == "custom" ]]; then
-        exec bash -ic "$cmd && sleep 1 && clear"
+        exec bash -ic "${cmd} ${ip}"
     else
-        exec bash -ic "ssh $ip && sleep 1 && clear"
+        exec ssh "$ip"
     fi
 }
 
