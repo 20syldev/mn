@@ -30,14 +30,52 @@ mod_get_fields() {
 # Get the title of a menu
 get_menu_title() {
     local menu="$1"
-    case "$menu" in
-        main) echo "$T_MENU_TITLE" ;;
-        config) echo "$T_MENU_TITLE_CONFIG" ;;
-        docs) echo "$T_MENU_TITLE_DOCS" ;;
-        *)
+    if [[ "$menu" == "main" ]]; then
+        echo "$T_MENU_TITLE"
+        return
+    fi
+    local title
+    title=$(mod_prop "$menu" "TITLE")
+    [[ -n "$title" ]] && echo "$title" || echo "$menu"
+}
+
+# Sort ALL_MODULES by PRIORITY (ascending), output one module name per line
+_sort_modules_by_priority() {
+    local mod priority
+    local -a pairs=()
+    for mod in $ALL_MODULES; do
+        priority=$(mod_prop "$mod" "PRIORITY")
+        priority="${priority:-50}"
+        pairs+=("${priority}:${mod}")
+    done
+    printf '%s\n' "${pairs[@]}" | sort -t: -k1,1n | cut -d: -f2
+}
+
+# Route a CLI invocation to the correct handler based on module TYPE
+_route_module() {
+    local mod="$1"
+    local mod_type
+    mod_type=$(mod_prop "$mod" "TYPE")
+
+    case "${mod_type:-crud}" in
+        crud)
+            _run_submenu "$mod"
+            ;;
+        menu)
             local title
-            title=$(mod_prop "$menu" "TITLE")
-            [[ -n "$title" ]] && echo "$title" || echo "$menu"
+            title=$(mod_prop "$mod" "TITLE")
+            hide_cursor
+            trap 'cleanup' INT TERM EXIT
+            "show_${mod}_menu"
+            LAST_MENU="$mod"
+            draw_menu "$title" "true"
+            while true; do
+                handle_input
+                local redraw="false"
+                [[ -z "$LAST_MENU" ]] && redraw="true" && LAST_MENU="$mod"
+                title=$(get_menu_title "$CURRENT_MENU")
+                draw_menu "$title" "$redraw"
+            done
             ;;
     esac
 }

@@ -164,15 +164,13 @@ toggle_switch() {
 }
 
 draw_footer() {
-    local is_crud_menu=false
-    for mod in $ALL_MODULES; do
-        [[ "$CURRENT_MENU" == "$mod" ]] && is_crud_menu=true && break
-    done
+    local mod_type
+    mod_type=$(mod_prop "$CURRENT_MENU" "TYPE")
 
     local base
     [[ "$CURRENT_MENU" == "main" ]] && base="$T_FOOTER_QUIT" || base="$T_FOOTER_BASE"
 
-    if $is_crud_menu; then
+    if [[ "$mod_type" == "crud" ]]; then
         if [[ $SELECTED_INDEX -gt 0 ]]; then
             echo -e "\n${DIM}  $base  $T_FOOTER_CRUD${NC}"
         else
