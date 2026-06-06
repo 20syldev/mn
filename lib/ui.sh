@@ -163,6 +163,105 @@ toggle_switch() {
     done
 }
 
+_CHK_CORE=0
+_CHK_CONFIG=0
+_CHK_DATA=0
+_CHK_PLUGINS=0
+
+checkbox_select() {
+    local prompt="$1"
+    shift
+    local -a labels=("$@")
+    local count=${#labels[@]}
+    local -a checked=()
+    local sel=0 i mark key
+
+    for (( i=0; i<count; i++ )); do checked[$i]=0; done
+    [[ $count -gt 1 ]] && checked[1]=1
+
+    hide_cursor
+    [[ -n "$prompt" ]] && echo -e "${RED}${prompt}${NC}"
+    echo ""
+
+    for (( i=0; i<count; i++ )); do
+        tput el
+        mark=" "; [[ ${checked[$i]} -eq 1 ]] && mark="✓"
+        if [[ $i -eq $sel ]]; then
+            echo -e "  ${REVERSE} [${mark}] ${labels[$i]} ${RESET}"
+        else
+            echo -e "    [${mark}] ${labels[$i]}"
+        fi
+    done
+    tput el
+    echo -e "\n${DIM}  $T_UNINSTALL_FOOTER${NC}"
+
+    while true; do
+        read -rsn1 key
+        if [[ "$key" == $'\x1b' ]]; then
+            read -rsn2 -t 0.1 key
+            case "$key" in
+                '[A') key="UP" ;;
+                '[B') key="DOWN" ;;
+                *) key="ESC" ;;
+            esac
+        fi
+
+        case "$key" in
+            UP|k)
+                (( sel-- ))
+                [[ $sel -lt 0 ]] && sel=$(( count - 1 ))
+                ;;
+            DOWN|j)
+                (( sel++ ))
+                [[ $sel -ge $count ]] && sel=0
+                ;;
+            ' ')
+                checked[$sel]=$(( 1 - ${checked[$sel]} ))
+                if [[ $sel -eq 0 ]]; then
+                    local val=${checked[0]}
+                    for (( i=1; i<count; i++ )); do checked[$i]=$val; done
+                else
+                    [[ ${checked[$sel]} -eq 0 ]] && checked[0]=0
+                    local all=1
+                    for (( i=1; i<count; i++ )); do
+                        [[ ${checked[$i]} -eq 0 ]] && all=0
+                    done
+                    checked[0]=$all
+                fi
+                ;;
+            a)
+                local new_val=$(( 1 - ${checked[0]} ))
+                for (( i=0; i<count; i++ )); do checked[$i]=$new_val; done
+                ;;
+            ''|$'\n')
+                _CHK_CORE=${checked[1]}
+                _CHK_CONFIG=${checked[2]}
+                _CHK_DATA=${checked[3]}
+                _CHK_PLUGINS=${checked[4]}
+                show_cursor
+                return 0
+                ;;
+            q|r|R|ESC)
+                show_cursor
+                return 1
+                ;;
+        esac
+
+        for (( i=0; i<count+2; i++ )); do tput cuu1; done
+        for (( i=0; i<count; i++ )); do
+            tput el
+            mark=" "; [[ ${checked[$i]} -eq 1 ]] && mark="✓"
+            if [[ $i -eq $sel ]]; then
+                echo -e "  ${REVERSE} [${mark}] ${labels[$i]} ${RESET}"
+            else
+                echo -e "    [${mark}] ${labels[$i]}"
+            fi
+        done
+        tput el
+        echo -e "\n${DIM}  $T_UNINSTALL_FOOTER${NC}"
+    done
+}
+
 draw_footer() {
     local mod_type
     mod_type=$(mod_prop "$CURRENT_MENU" "TYPE")
