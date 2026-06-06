@@ -20,29 +20,29 @@ for _mn_module_file in "$MN_DIR"/modules/*.sh; do
 done
 unset _mn_module_file
 
+
 # -------------------- MAIN MENU -------------------- #
 
 show_main_menu() {
     CURRENT_MENU="main"
     USE_PAGINATION=false
-    MENU_ITEMS=(
-        "$T_MENU_CONNEXIONS"
-        "$T_MENU_REPOS"
-        "$T_MENU_ALIAS"
-        "$T_MENU_FUNCS"
-        "$T_MENU_DOCS"
-        "$T_MENU_CONFIG"
-        "$T_MENU_HELP"
-    )
-    MENU_ACTIONS=(
-        "show_connexions_menu"
-        "show_repos_menu"
-        "show_alias_menu"
-        "show_funcs_menu"
-        "show_docs_menu"
-        "show_config_menu"
-        "show_help"
-    )
+    MENU_ITEMS=()
+    MENU_ACTIONS=()
+
+    local sorted_mods
+    sorted_mods=$(_sort_modules_by_priority)
+
+    while IFS= read -r mod; do
+        [[ -z "$mod" ]] && continue
+        local label
+        label=$(mod_prop "$mod" "MENU_LABEL")
+        [[ -z "$label" ]] && continue
+        MENU_ITEMS+=("$label")
+        MENU_ACTIONS+=("show_${mod}_menu")
+    done <<< "$sorted_mods"
+
+    MENU_ITEMS+=("$T_MENU_HELP")
+    MENU_ACTIONS+=("show_help")
 }
 
 # -------------------- HELP -------------------- #
@@ -55,11 +55,20 @@ show_help() {
     echo -e "  ${BOLD}$T_HELP_USAGE${NC}"
     echo "  ───────────────────────────────────────────────"
     echo -e "  mn              $T_HELP_CMD_MAIN"
-    echo -e "  mn conn         $T_HELP_CMD_CONN"
-    echo -e "  mn repos        $T_HELP_CMD_REPOS"
-    echo -e "  mn alias        $T_HELP_CMD_ALIAS"
-    echo -e "  mn funcs        $T_HELP_CMD_FUNCS"
-    echo -e "  mn docs         $T_HELP_CMD_DOCS"
+
+    # Dynamic module CLI args
+    local sorted_mods
+    sorted_mods=$(_sort_modules_by_priority)
+    while IFS= read -r mod; do
+        [[ -z "$mod" ]] && continue
+        local cli_args label
+        cli_args=$(mod_prop "$mod" "CLI_ARGS")
+        label=$(mod_prop "$mod" "MENU_LABEL")
+        [[ -z "$cli_args" ]] && continue
+        local first_arg="${cli_args%%|*}"
+        printf "  mn %-12s %s\n" "$first_arg" "$label"
+    done <<< "$sorted_mods"
+
     echo -e "  mn update       $T_HELP_CMD_UPDATE"
     echo -e "  mn uninstall    $T_HELP_CMD_UNINSTALL"
     echo -e "  mn help         $T_HELP_CMD_HELP"
@@ -185,54 +194,20 @@ main() {
             ;;
     esac
 
-    # Look for a matching module
+    # Dynamic module routing (CRUD, menu, and plugin modules)
     for mod in $ALL_MODULES; do
         local cli_args
         cli_args=$(mod_prop "$mod" "CLI_ARGS")
+        [[ -z "$cli_args" ]] && continue
         if echo "$arg" | grep -qE "^(${cli_args})$"; then
-            _run_submenu "$mod"
+            _route_module "$mod"
             return
         fi
     done
 
-    # Non-CRUD menus
-    case "$arg" in
-        docs|d)
-            hide_cursor
-            trap 'cleanup' INT TERM EXIT
-            show_docs_menu
-            LAST_MENU="docs"
-            draw_menu "DOCUMENTATION" "true"
-            while true; do
-                handle_input
-                local redraw="false"
-                [[ -z "$LAST_MENU" ]] && redraw="true" && LAST_MENU="docs"
-                local title
-                title=$(get_menu_title "$CURRENT_MENU")
-                draw_menu "$title" "$redraw"
-            done
-            ;;
-        config|c)
-            hide_cursor
-            trap 'cleanup' INT TERM EXIT
-            show_config_menu
-            LAST_MENU="config"
-            draw_menu "CONFIGURATION" "true"
-            while true; do
-                handle_input
-                local redraw="false"
-                [[ -z "$LAST_MENU" ]] && redraw="true" && LAST_MENU="config"
-                local title
-                title=$(get_menu_title "$CURRENT_MENU")
-                draw_menu "$title" "$redraw"
-            done
-            ;;
-        *)
-            echo -e "${RED}$T_ERR_UNKNOWN: $arg${NC}"
-            echo -e "${CYAN}mn help${NC} — $T_ERR_HELP_HINT"
-            exit 1
-            ;;
-    esac
+    echo -e "${RED}$T_ERR_UNKNOWN: $arg${NC}"
+    echo -e "${CYAN}mn help${NC} — $T_ERR_HELP_HINT"
+    exit 1
 }
 
 main "$@"
