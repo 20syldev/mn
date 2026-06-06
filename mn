@@ -93,42 +93,58 @@ show_help() {
 # -------------------- UPDATE -------------------- #
 
 mn_update() {
-    local CDN="https://cdn.sylvain.sh/bash"
     local LATEST
-    LATEST="$(curl -fsSL "${CDN}/mn@latest" | grep -o '"version": *"[^"]*"' | head -1 | cut -d'"' -f4)"
+    LATEST="$(curl -fsSL "${MN_CDN}/mn@latest" | grep -o '"version": *"[^"]*"' | head -1 | cut -d'"' -f4)"
 
     if [[ -z "$LATEST" ]]; then
-        echo -e "${RED}Failed to fetch latest version${NC}"
+        echo -e "${RED}${T_UPDATE_FAILED}${NC}"
         return 1
     fi
 
     if [[ "$LATEST" == "$VERSION" ]]; then
-        echo -e "${GREEN}mn is already up to date${NC} (${CYAN}${VERSION}${NC})"
+        echo -e "${GREEN}${T_UPDATE_UP_TO_DATE}${NC} (${CYAN}${VERSION}${NC})"
         return 0
     fi
 
-    echo -e "${BLUE}Updating mn${NC} ${CYAN}${VERSION}${NC} → ${CYAN}${LATEST}${NC}\n"
+    echo -e "${BLUE}${T_UPDATE_UPDATING} mn${NC} ${CYAN}${VERSION}${NC} → ${CYAN}${LATEST}${NC}\n"
 
     echo "$LATEST" > "$MN_DIR/VERSION"
-    curl -fsSL "${CDN}/mn@${LATEST}/mn" -o "$MN_DIR/mn" 2>/dev/null && chmod +x "$MN_DIR/mn"
-    echo -e "${GREEN}mn updated${NC}"
+    mkdir -p "$MN_DIR/plugins"
 
-    for lib in core crud dat module ui; do
-        curl -fsSL "${CDN}/mn@${LATEST}/lib/${lib}.sh" -o "$MN_DIR/lib/${lib}.sh" 2>/dev/null
-        echo -e "${GREEN}lib/${lib}.sh updated${NC}"
-    done
+    # Download all files from manifest; fallback to hardcoded list if unavailable
+    local manifest
+    manifest=$(curl -fsSL "${MN_CDN}/mn@${LATEST}/manifest" 2>/dev/null)
+    if [[ -n "$manifest" ]]; then
+        while IFS= read -r file; do
+            [[ -z "$file" || "$file" == VERSION ]] && continue
+            local dir
+            dir=$(dirname "$file")
+            [[ "$dir" != "." ]] && mkdir -p "$MN_DIR/$dir"
+            curl -fsSL "${MN_CDN}/mn@${LATEST}/${file}" -o "$MN_DIR/${file}" 2>/dev/null
+            [[ "$file" == "mn" ]] && chmod +x "$MN_DIR/mn"
+            echo -e "${GREEN}${file} ${T_UPDATED}${NC}"
+        done <<< "$manifest"
+        curl -fsSL "${MN_CDN}/mn@${LATEST}/manifest" -o "$MN_DIR/manifest" 2>/dev/null
+    else
+        # Fallback: hardcoded file list
+        curl -fsSL "${MN_CDN}/mn@${LATEST}/mn" -o "$MN_DIR/mn" 2>/dev/null && chmod +x "$MN_DIR/mn"
+        echo -e "${GREEN}mn ${T_UPDATED}${NC}"
+        for lib in core crud dat module plugin ui; do
+            curl -fsSL "${MN_CDN}/mn@${LATEST}/lib/${lib}.sh" -o "$MN_DIR/lib/${lib}.sh" 2>/dev/null
+            echo -e "${GREEN}lib/${lib}.sh ${T_UPDATED}${NC}"
+        done
+        for mod in alias config connexions docs funcs repos; do
+            curl -fsSL "${MN_CDN}/mn@${LATEST}/modules/${mod}.sh" -o "$MN_DIR/modules/${mod}.sh" 2>/dev/null
+            echo -e "${GREEN}modules/${mod}.sh ${T_UPDATED}${NC}"
+        done
+    fi
 
-    for mod in alias config connexions docs funcs repos; do
-        curl -fsSL "${CDN}/mn@${LATEST}/modules/${mod}.sh" -o "$MN_DIR/modules/${mod}.sh" 2>/dev/null
-        echo -e "${GREEN}modules/${mod}.sh updated${NC}"
-    done
-
-    curl -fsSL "${CDN}/mn@${LATEST}/lang/index" -o /tmp/mn_lang_index 2>/dev/null
+    curl -fsSL "${MN_CDN}/mn@${LATEST}/lang/index" -o /tmp/mn_lang_index 2>/dev/null
     if [[ -s /tmp/mn_lang_index ]]; then
         while IFS=: read -r code _name; do
             [[ -z "$code" ]] && continue
-            curl -fsSL "${CDN}/mn@${LATEST}/lang/${code}.sh" -o "$MN_DIR/lang/${code}.sh" 2>/dev/null
-            echo -e "${GREEN}lang/${code}.sh updated${NC}"
+            curl -fsSL "${MN_CDN}/mn@${LATEST}/lang/${code}.sh" -o "$MN_DIR/lang/${code}.sh" 2>/dev/null
+            echo -e "${GREEN}lang/${code}.sh ${T_UPDATED}${NC}"
         done < /tmp/mn_lang_index
         rm -f /tmp/mn_lang_index
     fi
