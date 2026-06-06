@@ -172,6 +172,15 @@ config_change_cdn() {
     show_config_menu
 }
 
+# -------------------- REGISTRATION -------------------- #
+
+MOD_config_TYPE="menu"
+MOD_config_MENU_LABEL="$T_MENU_CONFIG"
+MOD_config_TITLE="$T_MENU_TITLE_CONFIG"
+MOD_config_CLI_ARGS="config|c"
+MOD_config_PRIORITY=80
+
+ALL_MODULES="${ALL_MODULES:+$ALL_MODULES }config"
 
 config_uninstall() {
     clear_screen

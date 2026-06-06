@@ -5,6 +5,16 @@
 
 DOCS_DIR="$MN_DIR/docs"
 
+# -------------------- REGISTRATION -------------------- #
+
+MOD_docs_TYPE="menu"
+MOD_docs_MENU_LABEL="$T_MENU_DOCS"
+MOD_docs_TITLE="$T_MENU_TITLE_DOCS"
+MOD_docs_CLI_ARGS="docs|d"
+MOD_docs_PRIORITY=70
+
+ALL_MODULES="${ALL_MODULES:+$ALL_MODULES }docs"
+
 show_docs_menu() {
     CURRENT_MENU="docs"
     SELECTED_INDEX=0
