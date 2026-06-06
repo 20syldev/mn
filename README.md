@@ -134,7 +134,7 @@ mkcd:::mkdir -p "$1" && cd "$1";:::Create directory and move into it
 
 ### Change default editor
 
-Choose at install, or via `mn config` → **Change editor**. Presets: `vi`, `vim`, `nano`, `zed`, `code -n` or any custom command. Setting stored in `~/.config/mn/.editor`.
+Choose at install, or via `mn config` → **Change editor**. Presets: `vi`, `vim`, `nano`, `zed`, `code` or any custom command. Setting stored in `~/.config/mn/.editor`.
 
 ### Modify colors
 
