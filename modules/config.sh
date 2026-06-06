@@ -16,6 +16,7 @@ show_config_menu() {
         "${GREEN}[S]${NC} $T_CONFIG_SOURCE"
         "${CYAN}[L]${NC} $T_CONFIG_LANG"
         "${CYAN}[E]${NC} $T_CONFIG_EDITOR"
+        "${CYAN}[C]${NC} $T_CONFIG_CDN"
         "${RED}[X]${NC} $T_CONFIG_UNINSTALL"
     )
     MENU_ACTIONS=(
@@ -26,6 +27,7 @@ show_config_menu() {
         "config_source_all"
         "config_change_lang"
         "config_change_editor"
+        "config_change_cdn"
         "config_uninstall"
     )
 }
@@ -148,6 +150,28 @@ config_change_editor() {
     hide_cursor
     show_config_menu
 }
+
+config_change_cdn() {
+    clear_screen
+    draw_header "$T_CONFIG_CDN_TITLE"
+
+    echo -e "${WHITE}$T_CONFIG_CDN_CURRENT:${NC} ${CYAN}$MN_CDN${NC}\n"
+
+    show_cursor
+    echo -ne "${CYAN}$T_CONFIG_CDN_NEW:${NC} "
+    read -r new_cdn
+
+    if [[ -n "${new_cdn// }" && "$new_cdn" != "$MN_CDN" ]]; then
+        echo "$new_cdn" > "$MN_CDN_FILE"
+        MN_CDN="$new_cdn"
+        echo -e "\n${GREEN}✓ $T_CONFIG_CDN_CHANGED${NC}"
+        sleep 2
+    fi
+
+    hide_cursor
+    show_config_menu
+}
+
 
 config_uninstall() {
     clear_screen
