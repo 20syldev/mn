@@ -13,6 +13,7 @@ source "$MN_DIR/lib/dat.sh"
 source "$MN_DIR/lib/module.sh"
 source "$MN_DIR/lib/crud.sh"
 source "$MN_DIR/lib/ui.sh"
+source "$MN_DIR/lib/plugin.sh"
 
 # Load modules
 for _mn_module_file in "$MN_DIR"/modules/*.sh; do
@@ -20,6 +21,26 @@ for _mn_module_file in "$MN_DIR"/modules/*.sh; do
 done
 unset _mn_module_file
 
+# Load plugins (they self-register in ALL_MODULES)
+for _mn_plugin_dir in "$MN_DIR"/plugins/*/; do
+    [[ -f "${_mn_plugin_dir}mn.sh" ]] && source "${_mn_plugin_dir}mn.sh"
+done
+unset _mn_plugin_dir
+
+# Validate plugin dependencies — remove modules with missing required binaries
+_mn_valid=""
+for _mn_mod in $ALL_MODULES; do
+    _mn_req="PLUGIN_${_mn_mod}_REQUIRES"
+    _mn_ok=true
+    if [[ -n "${!_mn_req}" ]]; then
+        for _mn_dep in ${!_mn_req}; do
+            command -v "$_mn_dep" &>/dev/null || { _mn_ok=false; break; }
+        done
+    fi
+    $_mn_ok && _mn_valid="${_mn_valid:+$_mn_valid }${_mn_mod}"
+done
+ALL_MODULES="$_mn_valid"
+unset _mn_valid _mn_mod _mn_req _mn_dep _mn_ok
 
 # -------------------- MAIN MENU -------------------- #
 
@@ -69,6 +90,7 @@ show_help() {
         printf "  mn %-12s %s\n" "$first_arg" "$label"
     done <<< "$sorted_mods"
 
+    echo -e "  mn plugin       $T_PLUGIN_HELP_TITLE"
     echo -e "  mn update       $T_HELP_CMD_UPDATE"
     echo -e "  mn uninstall    $T_HELP_CMD_UNINSTALL"
     echo -e "  mn help         $T_HELP_CMD_HELP"
@@ -203,6 +225,11 @@ main() {
             ;;
         update|u)
             mn_update
+            return
+            ;;
+        plugin)
+            shift
+            _plugin_cmd "$@"
             return
             ;;
         "")
