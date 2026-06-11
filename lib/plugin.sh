@@ -14,6 +14,7 @@ _plugin_cmd() {
     case "$subcmd" in
         list|ls)     _plugin_list ;;
         install|add) _plugin_install "$@" ;;
+        update)      _plugin_update "$@" ;;
         remove|rm)   _plugin_remove "$@" ;;
         info)        _plugin_info "$@" ;;
         "")          _plugin_help ;;
@@ -158,6 +159,44 @@ _MANIFEST_EOF
     echo -e "${DIM}$T_PLUGIN_RESTART${NC}"
 }
 
+# ─── mn plugin update <name> [url|path] ──────────────────────────────
+
+_plugin_update() {
+    local name="$1"
+    local source="${2:-}"
+    if [[ -z "$name" ]]; then
+        echo -e "${RED}$T_PLUGIN_USAGE_UPDATE${NC}"
+        return 1
+    fi
+
+    local target_dir="$MN_PLUGIN_DIR/$name"
+    if [[ ! -d "$target_dir" || ! -f "$target_dir/mn.sh" ]]; then
+        echo -e "${RED}$T_PLUGIN_NOT_INSTALLED: '$name'${NC}"
+        return 1
+    fi
+
+    echo -e "${BLUE}$T_PLUGIN_LOOKING: '${name}'...${NC}"
+
+    local manifest_content
+    if [[ -z "$source" ]]; then
+        manifest_content=$(curl -fsSL "${MN_CDN}/${name}@latest/mn.sh" 2>/dev/null)
+    elif [[ -f "$source" ]]; then
+        manifest_content=$(cat "$source")
+    else
+        manifest_content=$(curl -fsSL "$source" 2>/dev/null)
+    fi
+
+    if [[ -z "$manifest_content" ]]; then
+        echo -e "${RED}$T_PLUGIN_NOT_FOUND: '$name'${NC}"
+        echo -e "${DIM}$T_PLUGIN_NOT_FOUND_HINT${NC}"
+        return 1
+    fi
+
+    echo "$manifest_content" > "$target_dir/mn.sh"
+    echo -e "${GREEN}$T_PLUGIN_UPDATED_OK: '$name'${NC}"
+    echo -e "${DIM}$T_PLUGIN_RESTART${NC}"
+}
+
 # ─── mn plugin remove <name> ──────────────────────────────────────────
 
 _plugin_remove() {
@@ -218,6 +257,7 @@ _plugin_help() {
     echo -e "${CYAN}${BOLD}mn plugin${NC} — $T_PLUGIN_HELP_TITLE\n"
     echo -e "  ${WHITE}mn plugin list${NC}                      $T_PLUGIN_HELP_LIST"
     echo -e "  ${WHITE}mn plugin install <name> [url|path]${NC}  $T_PLUGIN_HELP_INSTALL"
+    echo -e "  ${WHITE}mn plugin update <name> [url|path]${NC}   $T_PLUGIN_HELP_UPDATE"
     echo -e "  ${WHITE}mn plugin remove <name>${NC}              $T_PLUGIN_HELP_REMOVE"
     echo -e "  ${WHITE}mn plugin info <name>${NC}                $T_PLUGIN_HELP_INFO"
 }
