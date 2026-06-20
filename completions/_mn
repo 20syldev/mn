@@ -41,16 +41,19 @@ _mn() {
             local -a plugin_cmds=(
                 'list:List installed plugins'
                 'install:Install a plugin from CDN or path'
+                'update:Update an installed plugin'
                 'remove:Remove an installed plugin'
                 'info:Show plugin details'
             )
             _describe 'plugin command' plugin_cmds
-        elif (( CURRENT == 4 )) && [[ "${words[3]}" == remove ]]; then
+        elif (( CURRENT == 4 )) && [[ "${words[3]}" == (remove|update|info) ]]; then
             local -a plugins d
             for d in ~/.config/mn/plugins/*/; do
                 [[ -f "${d}mn.sh" ]] && plugins+=("$(basename "$d")")
             done
             _describe 'plugin' plugins
+        elif (( CURRENT == 5 )) && [[ "${words[3]}" == (install|update) ]]; then
+            _files
         fi
         return
     fi

@@ -21,14 +21,18 @@ _mn_complete() {
 
     if [[ "${COMP_WORDS[1]}" == "plugin" ]]; then
         if [[ $COMP_CWORD -eq 2 ]]; then
-            COMPREPLY=($(compgen -W "list install remove info" -- "$cur"))
+            COMPREPLY=($(compgen -W "list install update remove info" -- "$cur"))
             return 0
-        elif [[ $COMP_CWORD -eq 3 && "$prev" == "remove" ]]; then
+        elif [[ $COMP_CWORD -eq 3 && ( "$prev" == "remove" || "$prev" == "update" || "$prev" == "info" ) ]]; then
             local plugins="" d
             for d in ~/.config/mn/plugins/*/; do
                 [[ -f "${d}mn.sh" ]] && plugins="$plugins $(basename "$d")"
             done
             COMPREPLY=($(compgen -W "$plugins" -- "$cur"))
+            return 0
+        elif [[ $COMP_CWORD -eq 4 && ( "${COMP_WORDS[2]}" == "install" || "${COMP_WORDS[2]}" == "update" ) ]]; then
+            compopt -o filenames
+            COMPREPLY=($(compgen -f -- "$cur"))
             return 0
         fi
     fi
