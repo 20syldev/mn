@@ -146,6 +146,15 @@ generic_add() {
             return
         fi
 
+        # The first field is the entry key: refuse duplicates
+        if [[ $step -eq 0 && -n "$value" ]] && dat_read "$dat_file" "$value"; then
+            echo -e "\n${RED}✗ ${noun^} '$value' $T_ALREADY_EXISTS${NC}"
+            sleep 1
+            hide_cursor
+            generic_show_menu "$mod"
+            return
+        fi
+
         ((step++))
     done
 
@@ -156,11 +165,15 @@ generic_add() {
     sort_dat_file "$dat_file"
     [[ "$regen" == "true" ]] && regenerate_bash_files
 
-    # Post-add hook
+    # Post-add hook (may roll back the entry on failure)
     local post_add_fn
     post_add_fn=$(mod_prop "$mod" "POST_ADD_FN")
     if [[ -n "$post_add_fn" ]]; then
-        $post_add_fn "${wiz_values[@]}"
+        if ! $post_add_fn "${wiz_values[@]}"; then
+            hide_cursor
+            generic_show_menu "$mod"
+            return
+        fi
     fi
 
     # Final summary

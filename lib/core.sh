@@ -40,6 +40,31 @@ MN_CDN="https://cdn.sylvain.sh/bash"
 [[ -f "$MN_CDN_FILE" ]] && MN_CDN=$(cat "$MN_CDN_FILE")
 [[ -z "${MN_CDN// }" ]] && MN_CDN="https://cdn.sylvain.sh/bash"
 
+# -------------------- FUNCTION SCRIPTS -------------------- #
+
+FUNCS_SYSTEM_DIR="/usr/local/bin"
+FUNCS_FALLBACK_DIR="$HOME/.local/bin"
+
+funcs_bin_dir() {
+    if [[ -w "$FUNCS_SYSTEM_DIR" ]]; then
+        echo "$FUNCS_SYSTEM_DIR"
+    else
+        echo "$FUNCS_FALLBACK_DIR"
+    fi
+}
+
+funcs_script_path() {
+    local name="$1"
+    if [[ -f "$FUNCS_FALLBACK_DIR/$name" ]]; then
+        echo "$FUNCS_FALLBACK_DIR/$name"
+    elif [[ -f "$FUNCS_SYSTEM_DIR/$name" ]]; then
+        echo "$FUNCS_SYSTEM_DIR/$name"
+    else
+        echo "$(funcs_bin_dir)/$name"
+        return 1
+    fi
+}
+
 # -------------------- COLORS AND STYLES -------------------- #
 
 RED='\033[0;31m'
@@ -155,7 +180,9 @@ regenerate_bash_files() {
             local desc="${rest%%:::*}"
             local type="${rest#*:::}"
             if [[ "$type" == "shell" ]]; then
-                echo "$name() { source /usr/local/bin/$name \"\$@\"; }" >> "$tmp_functions"
+                local script
+                script=$(funcs_script_path "$name")
+                echo "$name() { source \"$script\" \"\$@\"; }" >> "$tmp_functions"
             fi
         done < "$FUNCS_FILE"
     fi
