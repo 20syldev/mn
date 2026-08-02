@@ -50,6 +50,47 @@ _funcs_menu_format() {
 
 # -------------------- HOOKS -------------------- #
 
+# Run sudo without letting Ctrl-C at the password prompt kill the TUI
+_funcs_sudo() {
+    local old_trap rc
+    old_trap=$(trap -p INT)
+    trap : INT
+    sudo "$@"
+    rc=$?
+    eval "${old_trap:-trap - INT}"
+    return $rc
+}
+
+# Open a script in the editor, via sudoedit when the file is not writable
+_funcs_open_editor() {
+    local script="$1"
+    if [[ -w "$script" ]]; then
+        $MN_EDITOR "$script"
+    else
+        local sudo_editor="$MN_EDITOR"
+        case "${sudo_editor%% *}" in
+            code|code-insiders|codium|zed|subl) sudo_editor="$sudo_editor --wait" ;;
+        esac
+        echo -e "  ${YELLOW}$T_FUNCS_ROOT_OWNED${NC}"
+        if ! SUDO_EDITOR="$sudo_editor" _funcs_sudo -e "$script"; then
+            echo -e "  ${RED}✗ $T_FUNCS_EDIT_FAILED${NC}"
+            sleep 2
+        fi
+    fi
+}
+
+# Remove a script, via sudo when its directory is not writable
+_funcs_remove_file() {
+    local script="$1"
+    local dir="${script%/*}"
+    if [[ -w "$dir" ]]; then
+        rm -f "$script"
+    else
+        echo -e "  ${YELLOW}$T_FUNCS_ROOT_OWNED${NC}"
+        _funcs_sudo rm -f "$script"
+    fi
+}
+
 # Custom view: show script content
 _funcs_view() {
     local name="$1"
@@ -59,18 +100,20 @@ _funcs_view() {
     dat_read "$FUNCS_FILE" "$name"
     local desc="${_DAT_FIELDS[1]}"
     local type="${_DAT_FIELDS[2]}"
+    local script
+    script=$(funcs_script_path "$name")
 
     echo -e "${WHITE}Description:${NC} $desc"
     [[ "$type" == "shell" ]] && echo -e "${WHITE}Type:${NC} ${YELLOW}shell${NC} ($T_FUNCS_SOURCED)"
-    echo -e "${WHITE}$T_FUNCS_FILE_LABEL:${NC} /usr/local/bin/$name"
+    echo -e "${WHITE}$T_FUNCS_FILE_LABEL:${NC} $script"
     echo ""
 
-    if [[ -f "/usr/local/bin/$name" ]]; then
+    if [[ -f "$script" ]]; then
         echo -e "${CYAN}$T_FUNCS_CONTENT${NC}"
-        cat "/usr/local/bin/$name"
+        cat "$script"
         echo -e "${CYAN}$T_FUNCS_CONTENT_END${NC}"
     else
-        echo -e "${RED}✗ /usr/local/bin/$name $T_FUNCS_NOT_FOUND${NC}"
+        echo -e "${RED}✗ $script $T_FUNCS_NOT_FOUND${NC}"
     fi
 
     echo -e "\n${DIM}$T_PRESS_KEY${NC}"
@@ -84,12 +127,13 @@ funcs_edit() {
     local name="$1"
     show_cursor
 
-    if [[ -f "/usr/local/bin/$name" ]]; then
-        $MN_EDITOR "/usr/local/bin/$name"
+    local script
+    if script=$(funcs_script_path "$name"); then
+        _funcs_open_editor "$script"
     else
         clear_screen
         draw_header "${T_EDIT_PREFIX}: $name"
-        echo -e "${RED}✗ /usr/local/bin/$name $T_FUNCS_NOT_FOUND${NC}"
+        echo -e "${RED}✗ $script $T_FUNCS_NOT_FOUND${NC}"
         sleep 1
     fi
     hide_cursor
@@ -99,13 +143,28 @@ funcs_edit() {
 # Post-add: create script and open in the configured editor
 _funcs_post_add() {
     local name="$1"
-    if [[ ! -f "/usr/local/bin/$name" ]]; then
-        echo '#!/bin/bash' > "/usr/local/bin/$name"
-        chmod +x "/usr/local/bin/$name"
+    local type="${3:-}"
+    local script
+    if ! script=$(funcs_script_path "$name"); then
+        local dir="${script%/*}"
+        mkdir -p "$dir" 2>/dev/null
+        if ! { echo '#!/bin/bash' > "$script"; } 2>/dev/null; then
+            dat_delete_entry "$FUNCS_FILE" "$name"
+            regenerate_bash_files
+            echo -e "  ${RED}✗ $T_FUNCS_CREATE_FAILED: $script${NC}"
+            sleep 2
+            return 1
+        fi
+        chmod +x "$script"
+        if [[ "$type" != "shell" && ":$PATH:" != *":$dir:"* ]]; then
+            echo -e "  ${YELLOW}⚠ $dir $T_FUNCS_PATH_WARN${NC}"
+            sleep 2
+        fi
     fi
-    echo -e "  ${CYAN}$T_FUNCS_OPEN_EDITOR /usr/local/bin/$name...${NC}"
+    echo -e "  ${CYAN}$T_FUNCS_OPEN_EDITOR $script...${NC}"
     sleep 1
-    $MN_EDITOR "/usr/local/bin/$name"
+    _funcs_open_editor "$script"
+    return 0
 }
 
 # Custom deletion: double confirmation
@@ -117,10 +176,12 @@ _funcs_delete() {
 
     dat_read "$FUNCS_FILE" "$name"
     local desc="${_DAT_FIELDS[1]}"
+    local script
+    script=$(funcs_script_path "$name")
 
     echo -e "${WHITE}${T_FUNCS_NOUN^}:${NC} $name"
     [[ -n "$desc" ]] && echo -e "${WHITE}Description:${NC} $desc"
-    echo -e "${WHITE}$T_FUNCS_FILE_LABEL:${NC} /usr/local/bin/$name"
+    echo -e "${WHITE}$T_FUNCS_FILE_LABEL:${NC} $script"
     echo ""
 
     echo -e "${CYAN}$T_FUNCS_DEL_DAT${NC}"
@@ -128,10 +189,18 @@ _funcs_delete() {
         dat_delete_entry "$FUNCS_FILE" "$name"
         regenerate_bash_files
 
-        echo -e "\n${CYAN}$T_FUNCS_DEL_FILE /usr/local/bin/$name ?${NC}"
-        if confirm_dialog; then
-            rm -f "/usr/local/bin/$name"
-            echo -e "\n${GREEN}✓ $T_FUNCS_DEL_BOTH${NC}"
+        if [[ -f "$script" ]]; then
+            echo -e "\n${CYAN}$T_FUNCS_DEL_FILE $script ?${NC}"
+            if confirm_dialog; then
+                if _funcs_remove_file "$script"; then
+                    echo -e "\n${GREEN}✓ $T_FUNCS_DEL_BOTH${NC}"
+                else
+                    echo -e "\n${RED}✗ $T_FUNCS_DEL_FAILED: $script${NC}"
+                    sleep 1
+                fi
+            else
+                echo -e "\n${GREEN}✓ $T_FUNCS_DEL_ENTRY${NC}"
+            fi
         else
             echo -e "\n${GREEN}✓ $T_FUNCS_DEL_ENTRY${NC}"
         fi
